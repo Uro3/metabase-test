@@ -1,0 +1,39 @@
+version: "3.8"
+services:
+  dataset_db:
+    image: postgres:9.6-alpine
+    environment:
+      POSTGRES_USER: dsuser
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: dataset
+    volumes:
+      - ./docker-data/db/dataset:/var/lib/postgresql/data:cached
+  metabase_db:
+    image: postgres:12.3-alpine
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: metabase
+    volumes:
+      - ./docker-data/db/metabase:/var/lib/postgresql/data:cached
+  metabase:
+    image: metabase/metabase:v0.36.4
+    environment:
+      MB_DB_TYPE: postgres
+      MB_DB_DBNAME: metabase
+      MB_DB_PORT: 5432
+      MB_DB_USER: user
+      MB_DB_PASS: password
+      MB_DB_HOST: metabase_db
+    volumes:
+      - ./wait-for-it.sh:/app/wait-for-it.sh
+    entrypoint:
+      - /app/wait-for-it.sh
+      - metabase_db:5432
+      - --
+    command: ["/app/run_metabase.sh"]
+    ports:
+      - 3000:3000
+    depends_on:
+      - dataset_db
+      - metabase_db
